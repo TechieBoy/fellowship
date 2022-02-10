@@ -47,20 +47,22 @@ fn shift_cipher_decode(t: &str) -> String {
     s
 }
 
-pub fn ceaser_encode(s: &str, key: Option<&str>) -> String {
+pub fn ceaser_encode(s: &str, key: Option<&str>) -> (String, String) {
     let v: String;
     if key.is_none() {
         v = (0..100)
             .map(|_| (thread_rng().gen_range(b'a'..(b'z' + 1))) as char)
             .collect::<String>();
-        println!("Using random key: {:?}", v);
     } else {
         v = key.unwrap().to_string();
     }
-    s.chars()
-        .zip(v.chars().cycle())
-        .map(|(c, k)| shift(c, k, true))
-        .collect()
+    (
+        v.clone(),
+        s.chars()
+            .zip(v.chars().cycle())
+            .map(|(c, k)| shift(c, k, true))
+            .collect(),
+    )
 }
 pub fn ceaser_decode(s: &str, key: &str) -> String {
     s.chars()
@@ -70,11 +72,11 @@ pub fn ceaser_decode(s: &str, key: &str) -> String {
 }
 
 fn shift(c: char, k: char, add: bool) -> char {
-    const START: i32 = 'a' as i32;
-    let d1 = c as i32 - START;
-    let d2 = k as i32 - START;
-    let r = if add { d1 + d2 } else { d1 - d2 };
-    (r.rem_euclid(26) + START) as u8 as char
+    let begin = 'a' as i16;
+    let s = c as i16 - begin;
+    let f = k as i16 - begin;
+    let result = if add { s + f } else { s - f };
+    (result.rem_euclid(26) + begin) as u8 as char
 }
 
 // Simple assert tests for functions above
@@ -94,9 +96,15 @@ fn main() {
     let s = shift_cipher_decode("ldpdsdqgdehdu");
     assert_eq!(s, "iamapandabear");
 
-    let k = ceaser_encode("iamapandabear", Some("ddd"));
-    assert_eq!(k, "ldpdsdqgdehdu");
+    let (k, v) = ceaser_encode("iamapandabear", Some("ddd"));
+    assert_eq!(k, "ddd");
+    assert_eq!(v, "ldpdsdqgdehdu");
 
-    let k2 = ceaser_encode("iamapandabear", None);
-    println!("{:?}", k2);
+    let k = ceaser_decode("ldpdsdqgdehdu", "ddd");
+    assert_eq!(k, "iamapandabear");
+
+    // Random key
+    let (k, v) = ceaser_encode("iamapandabear", None);
+    let decoded = ceaser_decode(&v, &k);
+    assert_eq!(decoded, "iamapandabear");
 }
