@@ -1,0 +1,14 @@
+{
+  "name": "airdrop",
+  "version": "1.0.0",
+  "description": "Airdrop for Solana India Fellowship",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Sanket",
+  "license": "MIT",
+  "dependencies": {
+    "@solana/web3.js": "^1.34.0"
+  }
+}
