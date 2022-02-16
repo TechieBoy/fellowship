@@ -1,28 +1,27 @@
 use anchor_lang::prelude::*;
-
-declare_id!("DZFPFVWnWQNJQisPem4ittbMerKwoW1zMitWP5NQZWHA");
+declare_id!("32xysbG8hJdyHRXkF8JWSN5K9yHdqZsFEgXNcNAo2Khg");
 
 #[program]
 pub mod voting {
 
     use super::*;
     pub fn initialize(ctx: Context<Initialize>) -> ProgramResult {
-        ctx.accounts.admin_account.admin_key = *ctx.accounts.admin.key;
+        let admin_account = &mut ctx.accounts.admin_account;
+        admin_account.admin_key = *ctx.accounts.admin.key;
         Ok(())
     }
 
     pub fn add_new_voter(ctx: Context<NewVoter>, stake_weight: u64) -> ProgramResult {
         let va = &mut ctx.accounts.voter_account;
         va.voter_key = *ctx.accounts.voter.key;
-        va.proposal_key = ctx.accounts.proposal.key();
         va.stake_weight = stake_weight;
         va.voted = false;
         Ok(())
     }
 
-    pub fn add_new_proposal(ctx: Context<NewProposal>, name:String, propbump: u8) -> ProgramResult {
+    pub fn add_new_proposal(ctx: Context<NewProposal>, id:u8) -> ProgramResult {
         let pa = &mut ctx.accounts.proposal_account;
-        pa.name = name;
+        pa.id = id;
         pa.votes = 0;
         // Set all proposal account owners to a single pda, for easy iteration.
         pa.to_account_info().owner = ctx.accounts.proposal_pda.key;
@@ -45,17 +44,18 @@ pub mod voting {
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {
-    pub admin: Signer<'info>,
     #[account(init, payer=admin)]
     pub admin_account: Account<'info, AdminAccount>,
+    #[account(mut)]
+    pub admin: Signer<'info>,
     pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]
 pub struct NewVoter<'info> {
+    #[account(mut)]
     pub admin_key: Signer<'info>,
     pub voter: AccountInfo<'info>,
-    pub proposal: Account<'info, ProposalAccount>,
     #[account(has_one = admin_key)]
     pub admin_account: Account<'info, AdminAccount>,
     #[account(
@@ -66,11 +66,11 @@ pub struct NewVoter<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(name:String, propbump:u8)]
 pub struct NewProposal<'info> {
+    #[account(mut)]
     pub admin_key: Signer<'info>,
 
-    #[account(seeds=[b"proposal"], bump = propbump)]
+    #[account(seeds=[b"proposal"], bump)]
     pub proposal_pda: AccountInfo<'info>,
 
     #[account(has_one = admin_key)]
@@ -79,14 +79,14 @@ pub struct NewProposal<'info> {
     #[account(
         init,
         payer = admin_key)]
-    // TODO: Why does owner constraint not work?
     pub proposal_account: Account<'info, ProposalAccount>,
-
     pub system_program: Program<'info, System>,
+
 }
 
 #[derive(Accounts)]
 pub struct DelegateVotes<'info> {
+    #[account(mut)]
     pub voter_key: Signer<'info>,
     #[account(mut, has_one = voter_key, constraint = !vote_account.voted)]
     pub vote_account: Account<'info, VoterAccount>,
@@ -97,9 +97,11 @@ pub struct DelegateVotes<'info> {
 
 #[derive(Accounts)]
 pub struct GiveVote<'info> {
+    #[account(mut)]
     pub voter_key: Signer<'info>,
     #[account(mut, has_one = voter_key, constraint = !vote_account.voted)]
     pub vote_account: Account<'info, VoterAccount>,
+    #[account(mut)]
     pub proposal_account: Account<'info, ProposalAccount>,
 }
 
@@ -109,12 +111,10 @@ pub struct GiveVote<'info> {
 pub struct AdminAccount {
     pub admin_key: Pubkey,
 }
-
 #[account]
 #[derive(Default)]
 pub struct VoterAccount {
     pub voter_key: Pubkey,
-    pub proposal_key: Pubkey,
     pub stake_weight: u64,
     pub voted: bool,
 }
@@ -122,6 +122,6 @@ pub struct VoterAccount {
 #[account]
 #[derive(Default)]
 pub struct ProposalAccount {
-    pub name: String,
+    pub id: u8,
     pub votes: u64,
 }
