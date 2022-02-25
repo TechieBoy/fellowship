@@ -37,6 +37,7 @@ describe("paymentchannel", () => {
     let curr_state = await program.account.channelState.fetch(state_pda, 'processed');
     console.log(curr_state.aliceBalance.toNumber());
     console.log(curr_state.bobBalance.toNumber());
+    console.log(curr_state.initTime.toNumber());
     console.log("Your transaction signature", tx);
   });
 
@@ -62,7 +63,19 @@ describe("paymentchannel", () => {
   });
   
   it("Liquidate and end!", async () => {
-    console.log("TODO!")
+    const [state_pda, _bump] = await anchor.web3.PublicKey.findProgramAddress(
+      [Buffer.from(anchor.utils.bytes.utf8.encode("state"))],
+      program.programId
+    );
+    const tx = await program.rpc.liquidate({
+      accounts: {
+          signer: alice.publicKey,
+          other: bob.publicKey,
+          state: state_pda,
+          systemProgram: anchor.web3.SystemProgram.programId,
+      },
+      signers: [alice]
+    });
   });
   
 });
