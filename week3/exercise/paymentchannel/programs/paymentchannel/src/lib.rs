@@ -18,12 +18,12 @@ pub mod paymentchannel {
         transfer(
             ctx.accounts.alice.to_account_info(),
             ctx.accounts.state.to_account_info(),
-            alice_amount
+            alice_amount,
         )?;
         transfer(
             ctx.accounts.bob.to_account_info(),
             ctx.accounts.state.to_account_info(),
-            bob_amount
+            bob_amount,
         )?;
         Ok(())
     }
@@ -44,7 +44,7 @@ pub mod paymentchannel {
         let bob = state_account.bob;
         let clock = Clock::get()?;
         // Alice or bob must wait 2 hours before liquidating
-        if (clock.unix_timestamp - ctx.accounts.state.init_time) < 60*2 {
+        if (clock.unix_timestamp - ctx.accounts.state.init_time) < 60 * 2 {
             return err!(ChannelError::InvalidTime);
         }
         if *ctx.accounts.signer.key == alice {
@@ -71,7 +71,6 @@ pub mod paymentchannel {
                 .to_account_info()
                 .try_borrow_mut_lamports()? += state_account.bob_balance;
         } else if *ctx.accounts.signer.key == bob {
-
             // Give bob balance to signer
             **ctx
                 .accounts
@@ -90,10 +89,7 @@ pub mod paymentchannel {
                 .state
                 .to_account_info()
                 .try_borrow_mut_lamports()? -= state_account.alice_balance;
-            **ctx
-                .accounts
-                .other
-                .try_borrow_mut_lamports()? += state_account.alice_balance;
+            **ctx.accounts.other.try_borrow_mut_lamports()? += state_account.alice_balance;
         }
         Ok(())
     }
