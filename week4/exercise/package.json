@@ -1,0 +1,17 @@
+{
+  "name": "metaplex-updator",
+  "version": "1.0.0",
+  "description": "Update metaplex nft metadata regularly",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@metaplex/js": "^4.12.0",
+    "@solana/web3.js": "^1.36.0",
+    "node-schedule": "^2.1.0"
+  }
+}
